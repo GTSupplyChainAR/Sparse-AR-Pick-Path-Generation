@@ -14,9 +14,11 @@ _hdlr.setFormatter(_formatter)
 _hdlr.setLevel(logging.DEBUG)
 logger.addHandler(_hdlr)
 
+random_state = np.random.RandomState(42)
+
 
 def generate_pick_path_as_dict(books_repo, gt_library_layout, books_per_pick_path, source):
-    unordered_books = np.random.choice(
+    unordered_books = random_state.choice(
         a=books_repo.values(),
         size=books_per_pick_path,
         replace=False,
@@ -89,7 +91,6 @@ def get_pick_paths(number_of_training_pick_paths, number_of_testing_pick_paths, 
 
 
 if __name__ == '__main__':
-    # np.random.seed(42)
 
     pick_paths = get_pick_paths(
         number_of_training_pick_paths=10,

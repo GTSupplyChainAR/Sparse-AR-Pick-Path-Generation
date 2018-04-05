@@ -15,6 +15,9 @@ _hdlr.setLevel(logging.DEBUG)
 logger.addHandler(_hdlr)
 
 
+VERSION = '1.1'
+
+
 def generate_pick_path_as_dict(books_repo, gt_library_layout, books_per_pick_path, source):
     unordered_books = np.random.choice(
         a=books_repo.values(),
@@ -99,4 +102,7 @@ if __name__ == '__main__':
     )
 
     with open('output.json', mode='w+') as f:
-        json.dump(pick_paths, f, indent=4)
+        json.dump({
+            'version': VERSION,
+            'pickPaths': pick_paths
+        }, f, indent=4)

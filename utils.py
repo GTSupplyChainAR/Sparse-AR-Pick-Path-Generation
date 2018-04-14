@@ -1,49 +1,38 @@
 import json
-from models import Book, NAVIGABLE_CELL
+import logging
 import networkx as nx
 import itertools
+from constants import NAVIGABLE_CELL, OBSTACLE_CELL, SHELVE_CELL
+from models import GTLibraryGridWarehouse
+
+WAREHOUSE_JSON_FILE_FORMAT_VERSION = '1.1'
 
 
-def get_books_repository(filepath):
-    books = []
-
-    with open(filepath) as f:
-        book_dicts = json.load(f)
-
-    for book_dict in book_dicts:
-        books.append(Book(
-            title=book_dict['book']['title'],
-            author=book_dict['book']['author'],
-            aisle=book_dict['location']['aisle'],
-            column=book_dict['location']['column'],
-            row=book_dict['location']['row'],
-        ))
-
-    return {book.tag: book for book in books}
+def configure_logger(logger):
+    logger.setLevel(logging.DEBUG)
+    _hdlr = logging.StreamHandler()
+    _formatter = logging.Formatter('%(name)-12s %(levelname)-8s %(asctime)-30s %(message)s')
+    _hdlr.setFormatter(_formatter)
+    _hdlr.setLevel(logging.DEBUG)
+    logger.addHandler(_hdlr)
+    return logger
 
 
-def get_books_locations(books, gt_library):
-    locations = []
-    for selected_book in books:
-        locations.append(get_book_location(selected_book, gt_library))
-    return books, locations
+def get_warehouse(warehouse_file_path):
 
+    with open(warehouse_file_path) as f:
+        warehouse_data = json.load(f)
 
-def get_book_location(target_book, gt_library):
-    num_rows = len(gt_library)
-    num_cols = len(gt_library[0])
+    assert warehouse_data['version'] == WAREHOUSE_JSON_FILE_FORMAT_VERSION
 
-    for r in range(num_rows):
-        for c in range(num_cols):
-            cell = gt_library[r][c]
-            if cell is NAVIGABLE_CELL:
-                continue
+    layout = warehouse_data['warehouseLayout']
 
-            for book in cell:
-                if book.tag == target_book.tag:
-                    return (r, c)
-
-    raise ValueError("Couldn't find book with tag %s" % target_book.tag)
+    return GTLibraryGridWarehouse(
+        dimensions=(layout['numRows'], layout['numCols']),
+        navigation_grid=layout['navigationGrid'],
+        shelve_tags_to_locations=layout['shelveTagsToLocations'],
+        book_dicts=warehouse_data['books'],
+    )
 
 
 def convert_grid_to_graph(gt_library, unit_cost=1):
@@ -67,14 +56,16 @@ def convert_grid_to_graph(gt_library, unit_cost=1):
     return G
 
 
-def get_naviable_cell_coordinate_near_book(book_coordinate, library):
+def get_naviable_cell_coordinate_near_book(book_coordinate, gt_library_warehouse):
     book_coordinate_r, book_coordinate_c = book_coordinate
-    shelving_column = library[book_coordinate_r][book_coordinate_c]
+    shelve_tag = gt_library_warehouse.get_shelve_tag(book_coordinate_r, book_coordinate_c)
+    shelve_aisle = get_shelve_aisle_from_tag(shelve_tag)
 
-    if shelving_column.aisle in ('A', 'C', 'E', 'G'):
+    if shelve_aisle in ('A', 'C', 'E', 'G'):
         # Then, look to the cell above
         return (book_coordinate_r - 1, book_coordinate_c)
-    elif shelving_column.aisle in ('B', 'D', 'F', 'H'):
+
+    elif shelve_aisle in ('B', 'D', 'F', 'H'):
         # Then, book to the cell below
         return (book_coordinate_r + 1, book_coordinate_c)
 
@@ -92,12 +83,14 @@ def are_neighbors_in_grid(n1, n2):
     return False
 
 
-def get_subgraph_on_book_locations(libray, book_locations, source_location):
+def get_subgraph_on_book_locations(gt_library_warehouse, book_locations, source_location):
 
-    if libray[source_location[0]][source_location[1]] is not NAVIGABLE_CELL:
-        raise ValueError("Source must be navigable.")
+    assert gt_library_warehouse.get_cell(source_location[0], source_location[1]) is NAVIGABLE_CELL, "Source must be navigable."
 
-    G_library = convert_grid_to_graph(libray)
+    for book_location_r, book_location_c in book_locations:
+        assert gt_library_warehouse.get_cell(book_location_r, book_location_c) is SHELVE_CELL, "Book must be on shelve."
+
+    G_library = convert_grid_to_graph(gt_library_warehouse.navigation_grid)
 
     G_subgraph = nx.MultiDiGraph()
     G_subgraph.add_node(source_location)
@@ -108,12 +101,12 @@ def get_subgraph_on_book_locations(libray, book_locations, source_location):
         if location1 == source_location:
             cell1_location = location1
         else:
-            cell1_location = get_naviable_cell_coordinate_near_book(location1, libray)
+            cell1_location = get_naviable_cell_coordinate_near_book(location1, gt_library_warehouse)
 
         if location2 == source_location:
             cell2_location = location2
         else:
-            cell2_location = get_naviable_cell_coordinate_near_book(location2, libray)
+            cell2_location = get_naviable_cell_coordinate_near_book(location2, gt_library_warehouse)
 
         shortest_path_cost = nx.dijkstra_path_length(G_library, cell1_location, cell2_location)
 
@@ -123,8 +116,8 @@ def get_subgraph_on_book_locations(libray, book_locations, source_location):
     return G_subgraph
 
 
-def get_pick_path_in_library(library, books, optimal_pick_path_locations, source_coordinate):
-    G_library = convert_grid_to_graph(library)
+def get_pick_path_in_library(gt_library_warehouse, books, optimal_pick_path_locations, source_coordinate):
+    G_library = convert_grid_to_graph(gt_library_warehouse.navigation_grid)
 
     optimal_pick_path_in_library = []
 
@@ -135,12 +128,12 @@ def get_pick_path_in_library(library, books, optimal_pick_path_locations, source
         if n1 == source_coordinate:
             c1 = source_coordinate
         else:
-            c1 = get_naviable_cell_coordinate_near_book(n1, library)
+            c1 = get_naviable_cell_coordinate_near_book(n1, gt_library_warehouse)
 
         if n2 == source_coordinate:
             c2 = source_coordinate
         else:
-            c2 = get_naviable_cell_coordinate_near_book(n2, library)
+            c2 = get_naviable_cell_coordinate_near_book(n2, gt_library_warehouse)
 
         path = nx.dijkstra_path(G_library, c1, c2)
 
@@ -236,3 +229,7 @@ def get_pick_path_as_dict(unordered_books, unordered_books_locations, ordered_bo
         'orderedBooksAndLocations': ordered_books_and_locations,
         'orderedPickPath': ordered_pick_path,
     }
+
+
+def get_shelve_aisle_from_tag(shelve_tag):
+    return shelve_tag[2]

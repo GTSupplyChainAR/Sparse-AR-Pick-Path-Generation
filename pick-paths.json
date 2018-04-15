@@ -58,6 +58,10 @@
                                 0
                             ], 
                             [
+                                0, 
+                                1
+                            ], 
+                            [
                                 19, 
                                 6
                             ], 
@@ -83,6 +87,10 @@
                         "cellByCellPathToTargetBookLocation": [
                             [
                                 20, 
+                                6
+                            ], 
+                            [
+                                19, 
                                 6
                             ], 
                             [
@@ -119,6 +127,10 @@
                         "cellByCellPathToTargetBookLocation": [
                             [
                                 55, 
+                                21
+                            ], 
+                            [
+                                56, 
                                 21
                             ], 
                             [
@@ -166,6 +178,10 @@
                                 12
                             ], 
                             [
+                                24, 
+                                12
+                            ], 
+                            [
                                 23, 
                                 12
                             ]
@@ -187,6 +203,10 @@
                         "cellByCellPathToTargetBookLocation": [
                             [
                                 23, 
+                                12
+                            ], 
+                            [
+                                24, 
                                 12
                             ], 
                             [

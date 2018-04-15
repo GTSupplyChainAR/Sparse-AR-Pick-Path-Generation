@@ -40,8 +40,7 @@ def generate_pick_path_as_dict(gt_library_warehouse, books_per_pick_path, source
     assert len(unordered_books) == len(ordered_books) - 2 == len(ordered_locations) - 2
 
     logger.debug('Computing cell-by-cell pick path in library based on TSP solution.')
-    optimal_pick_path_in_library = utils.get_pick_path_in_library(
-        gt_library_warehouse, ordered_books, ordered_locations, source)
+    optimal_pick_path_in_library = utils.get_pick_path_in_library(gt_library_warehouse, ordered_locations, source)
 
     logger.debug('Verifying solution has right format and cost.')
     utils.assert_library_pick_path_is_proper(optimal_pick_path_in_library, ordered_locations, source)

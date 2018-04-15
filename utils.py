@@ -8,17 +8,18 @@ from models import GTLibraryGridWarehouse
 WAREHOUSE_JSON_FILE_FORMAT_VERSION = '1.1'
 
 
-def configure_logger(logger):
-    logger.setLevel(logging.DEBUG)
-    _hdlr = logging.StreamHandler()
-    _formatter = logging.Formatter('%(name)-12s %(levelname)-8s %(asctime)-30s %(message)s')
-    _hdlr.setFormatter(_formatter)
-    _hdlr.setLevel(logging.DEBUG)
-    logger.addHandler(_hdlr)
+def configure_logger(logger, logging_level=logging.DEBUG):
+    logger.setLevel(logging_level)
+    handler = logging.StreamHandler()
+    formatter = logging.Formatter('%(name)-12s %(levelname)-8s %(asctime)-30s %(message)s')
+    handler.setFormatter(formatter)
+    handler.setLevel(logging_level)
+    logger.addHandler(handler)
     return logger
 
 
 def get_warehouse(warehouse_file_path):
+    """ Loads the given JSON file and returns a GTLibraryGridWarehouse instance. """
 
     with open(warehouse_file_path) as f:
         warehouse_data = json.load(f)
@@ -36,6 +37,7 @@ def get_warehouse(warehouse_file_path):
 
 
 def convert_grid_to_graph(gt_library_grid, unit_cost=1):
+    """ Converts navigation grid into a graph where neighboring cells are connected. """
     G = nx.MultiDiGraph()
 
     num_rows = len(gt_library_grid)
@@ -56,8 +58,11 @@ def convert_grid_to_graph(gt_library_grid, unit_cost=1):
     return G
 
 
-def get_naviable_cell_coordinate_near_book(book_coordinate, gt_library_warehouse):
+def get_navigable_cell_coordinate_near_book(book_coordinate, gt_library_warehouse):
+    """ Returns the navigable cell closest to the given book coordinate. """
     book_coordinate_r, book_coordinate_c = book_coordinate
+
+    # Use the book's shelve aisle to determine where the nearest navigable cell is
     shelve_tag = gt_library_warehouse.get_shelve_tag(book_coordinate_r, book_coordinate_c)
     shelve_aisle = get_shelve_aisle_from_tag(shelve_tag)
 
@@ -70,25 +75,33 @@ def get_naviable_cell_coordinate_near_book(book_coordinate, gt_library_warehouse
         return (book_coordinate_r + 1, book_coordinate_c)
 
 
-def are_neighbors_in_grid(n1, n2):
-    x1, y1 = n1
-    x2, y2 = n2
+def are_neighbors_in_grid(coordinate_a, coordinate_b):
+    """ Determines if the given cells are neighbors or not. """
+    coordinate_a_r, coordinate_a_c = coordinate_a
+    coordinate_b_r, coordinate_b_c = coordinate_b
 
-    if abs(x1 - x2) == 1 and y1 == y2:
+    if abs(coordinate_a_r - coordinate_b_r) == 1 and coordinate_a_c == coordinate_b_c:
         return True
 
-    if x1 == x2 and abs(y1 - y2) == 1:
+    if coordinate_a_r == coordinate_b_r and abs(coordinate_a_c - coordinate_b_c) == 1:
         return True
 
     return False
 
 
 def get_subgraph_on_book_locations(gt_library_warehouse, book_locations, source_location):
+    """
+    Given a list of book locations, this method produces the sub-graph on the navigation grid of these book locations.
+    """
 
-    assert gt_library_warehouse.get_cell(source_location[0], source_location[1]) is NAVIGABLE_CELL, "Source must be navigable."
+    # Ensure the source cell is navigable
+    assert gt_library_warehouse.get_cell(source_location[0], source_location[1]) is NAVIGABLE_CELL, \
+        "Source must be navigable."
 
+    # Ensure all the books are on shelves
     for book_location_r, book_location_c in book_locations:
-        assert gt_library_warehouse.get_cell(book_location_r, book_location_c) is SHELVE_CELL, "Book must be on shelve."
+        assert gt_library_warehouse.get_cell(book_location_r, book_location_c) is SHELVE_CELL, \
+            "Book must be on a shelve."
 
     G_library = convert_grid_to_graph(gt_library_warehouse.navigation_grid)
 
@@ -101,13 +114,14 @@ def get_subgraph_on_book_locations(gt_library_warehouse, book_locations, source_
         if location1 == source_location:
             cell1_location = location1
         else:
-            cell1_location = get_naviable_cell_coordinate_near_book(location1, gt_library_warehouse)
+            cell1_location = get_navigable_cell_coordinate_near_book(location1, gt_library_warehouse)
 
         if location2 == source_location:
             cell2_location = location2
         else:
-            cell2_location = get_naviable_cell_coordinate_near_book(location2, gt_library_warehouse)
+            cell2_location = get_navigable_cell_coordinate_near_book(location2, gt_library_warehouse)
 
+        # Use Dijkstra's algorithm to determine the distance between adjacent shelves
         shortest_path_cost = nx.dijkstra_path_length(G_library, cell1_location, cell2_location)
 
         G_subgraph.add_edge(location1, location2, weight=shortest_path_cost)
@@ -116,11 +130,14 @@ def get_subgraph_on_book_locations(gt_library_warehouse, book_locations, source_
     return G_subgraph
 
 
-def get_pick_path_in_library(gt_library_warehouse, books, optimal_pick_path_locations, source_coordinate):
+def get_pick_path_in_library(gt_library_warehouse, optimal_pick_path_locations, source_coordinate):
+    """ Given the TSP shelve locations, this method returns the actual cell-by-cell pick path in the warehouse. """
+
     G_library = convert_grid_to_graph(gt_library_warehouse.navigation_grid)
 
     optimal_pick_path_in_library = []
 
+    # Get the cell-by-cell path between every pair of adjacent nodes in the optimal pick path
     for i in range(len(optimal_pick_path_locations) - 1):
         n1 = optimal_pick_path_locations[i]
         n2 = optimal_pick_path_locations[i + 1]
@@ -128,13 +145,14 @@ def get_pick_path_in_library(gt_library_warehouse, books, optimal_pick_path_loca
         if n1 == source_coordinate:
             c1 = source_coordinate
         else:
-            c1 = get_naviable_cell_coordinate_near_book(n1, gt_library_warehouse)
+            c1 = get_navigable_cell_coordinate_near_book(n1, gt_library_warehouse)
 
         if n2 == source_coordinate:
             c2 = source_coordinate
         else:
-            c2 = get_naviable_cell_coordinate_near_book(n2, gt_library_warehouse)
+            c2 = get_navigable_cell_coordinate_near_book(n2, gt_library_warehouse)
 
+        # Use dijkstra's algorithm to get the best path in the library
         path = nx.dijkstra_path(G_library, c1, c2)
 
         if n1 != source_coordinate:

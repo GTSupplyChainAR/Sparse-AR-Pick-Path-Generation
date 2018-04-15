@@ -10,7 +10,7 @@ logger = logging.getLogger(os.path.basename(__file__))
 logger = utils.configure_logger(logger)
 
 
-PICK_PATHS_FORMAT_VERSION = '1.1'
+PICK_PATH_FILE_FORMAT_VERSION = '1.1'
 
 
 def generate_pick_path_as_dict(gt_library_warehouse, books_per_pick_path, source):  # type: (GTLibraryGridWarehouse, int, (int, int)) -> dict
@@ -87,7 +87,7 @@ if __name__ == '__main__':
     with open('pick-paths.json', mode='w+') as f:
         json.dump(
             obj={
-                'version': PICK_PATHS_FORMAT_VERSION,
+                'version': PICK_PATH_FILE_FORMAT_VERSION,
                 'pickPaths': pick_paths
             },
             fp=f,

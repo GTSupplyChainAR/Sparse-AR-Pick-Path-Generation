@@ -24,6 +24,15 @@ Alter the parameters hardcoded in `main.py` like
 * the number of testing tasks,
 * the number of books per pick path.
 
+## Visualizations
+
+You can view the pick paths using
+```
+python visualize.py
+```
+
+Navigate to other pick paths using the left and right arrow keys.
+
 ## Output description
 
 The format of the `output.json` file should be very simple and intuitive. Please, ask one a team member for more details.

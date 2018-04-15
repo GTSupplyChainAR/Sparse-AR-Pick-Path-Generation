@@ -35,48 +35,6 @@ class Book(object):
         }
 
 
-class ShelvingColumn(object):
-    def __init__(self, aisle, column):
-        self.aisle = aisle
-        self.column = str(column)
-        self.books = []
-
-    def add_books_from_repository(self, repository):
-        books = []
-        for book_tag in repository:
-            book = repository[book_tag]
-            if book.aisle == self.aisle and book.column == self.column:
-                books.append(book)
-
-        self.books = sorted(books, key=lambda b: b.row)
-
-    def __iter__(self):
-        return iter(self.books)
-
-
-class LibraryRow(object):
-    def __init__(self, aisle):
-        self.aisle = aisle
-
-        if self.aisle in ('A', 'C', 'E', 'G'):
-            self.starting_column_number = 100
-            self.ending_column_number = 110
-        elif self.aisle in ('B', 'D', 'F', 'H'):
-            self.starting_column_number = 101
-            self.ending_column_number = 111
-        else:
-            raise ValueError("Unknown aisle %s" % self.aisle)
-
-    def get_shelving_columns(self, books_repository):
-        shelving_columns = []
-        step = 2
-        for column_number in range(self.starting_column_number, self.ending_column_number + 1, step):
-            shelving_column = ShelvingColumn(self.aisle, column_number)
-            shelving_column.add_books_from_repository(books_repository)
-            shelving_columns.append(shelving_column)
-        return shelving_columns
-
-
 class GTLibraryGridWarehouse(object):
     NUMBER_OF_SHELVES = 6 * 8
 
@@ -95,12 +53,7 @@ class GTLibraryGridWarehouse(object):
                        or cell == OBSTACLE_CELL \
                        or cell == SHELVE_CELL
 
-        # Update navigation grid to include shelves at their specified locations
         assert len(shelve_tags_to_locations) == self.NUMBER_OF_SHELVES
-        # for shelve_tag, location in shelve_tags_to_locations.iteritems():
-        #     row_idx, col_idx = location
-        #     assert self.navigation_grid[row_idx][col_idx] == SHELVE_CELL
-        #     self.navigation_grid[row_idx][col_idx] = shelve_tag
         self.locations_to_shelve_tags = {tuple(location): tag for tag, location in shelve_tags_to_locations.iteritems()}
 
         self.books = []

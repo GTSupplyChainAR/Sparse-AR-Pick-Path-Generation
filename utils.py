@@ -2,7 +2,7 @@ import json
 import logging
 import networkx as nx
 import itertools
-from constants import NAVIGABLE_CELL, OBSTACLE_CELL, SHELVE_CELL
+from constants import NAVIGABLE_CELL, SHELVE_CELL
 from models import GTLibraryGridWarehouse
 
 WAREHOUSE_JSON_FILE_FORMAT_VERSION = '1.1'
@@ -35,15 +35,15 @@ def get_warehouse(warehouse_file_path):
     )
 
 
-def convert_grid_to_graph(gt_library, unit_cost=1):
+def convert_grid_to_graph(gt_library_grid, unit_cost=1):
     G = nx.MultiDiGraph()
 
-    num_rows = len(gt_library)
-    num_cols = len(gt_library[0])
+    num_rows = len(gt_library_grid)
+    num_cols = len(gt_library_grid[0])
 
     for r in range(num_rows):
         for c in range(num_cols):
-            if gt_library[r][c] is not NAVIGABLE_CELL:
+            if gt_library_grid[r][c] is not NAVIGABLE_CELL:
                 continue
 
             G.add_node((r, c))

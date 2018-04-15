@@ -3,6 +3,11 @@ from models import GTLibraryGridWarehouse
 from constants import SHELVE_CELL, NAVIGABLE_CELL, OBSTACLE_CELL
 import utils
 import json
+import os
+import logging
+
+logger = logging.getLogger(os.path.basename(__file__))
+logger = utils.configure_logger(logger)
 
 
 VERSION = '1.1'
@@ -43,6 +48,8 @@ tk_main = tk.Tk()
 
 def render():  # type: (GTLibraryGridWarehouse, dict) -> None
     """ Renders the given pick path on the provided grid warehouse into Tkinter main window. """
+
+    logger.info('Starting render.')
 
     global gt_library_grid_warehouse, canvas_height, canvas_width, canvas, pick_paths, current_pick_path_index
 
@@ -136,6 +143,8 @@ def render():  # type: (GTLibraryGridWarehouse, dict) -> None
 
     canvas.update()
 
+    logger.info('Finished render.')
+
 
 def get_chevron_direction_between_locations(location_a, location_b):
     location_a_r, location_a_c = location_a
@@ -208,12 +217,18 @@ def get_triangle_coordinates(origin_location, direction):
 def tk_handle_left_key(event):
     global current_pick_path_index
     current_pick_path_index = max(0, current_pick_path_index - 1)
+
+    logger.info("Left key pressed. Current pick path index set to %d." % current_pick_path_index)
+
     render()
 
 
 def tk_handle_right_key(event):
     global current_pick_path_index
     current_pick_path_index = min(len(pick_paths) - 1, current_pick_path_index + 1)
+
+    logger.info("Right key pressed. Current pick path index set to %d." % current_pick_path_index)
+
     render()
 
 

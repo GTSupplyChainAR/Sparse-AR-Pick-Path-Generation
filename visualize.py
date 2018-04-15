@@ -1,14 +1,13 @@
 import Tkinter as tk
-from models import GTLibraryGridWarehouse
 from constants import SHELVE_CELL, NAVIGABLE_CELL, OBSTACLE_CELL
 import utils
 import json
 import os
 import logging
+import numpy as np
 
 logger = logging.getLogger(os.path.basename(__file__))
 logger = utils.configure_logger(logger)
-
 
 PICK_PATH_FILE_FORMAT_VERSION = '1.1'
 
@@ -34,13 +33,7 @@ class Colors(str):
     TITLE_FONT = '#5856d6'
 
     CHEVRON = '#ff3b30'
-
-
-class Direction(str):
-    UP = 'up'
-    DOWN = 'down'
-    LEFT = 'left'
-    RIGHT = 'right'
+    PATH_LINE = CHEVRON
 
 
 # Tkinter setup
@@ -57,6 +50,7 @@ def render():
 
     # Get pick path to be rendered
     pick_path = pick_paths[current_pick_path_index]
+    ordered_pick_path = pick_path['pickPathInformation']['orderedPickPath']
 
     # Remove all elements added in previous calls to render
     canvas.delete('all')
@@ -93,8 +87,8 @@ def render():
                 (r + 1) * SQUARE_SIDE_LENGTH_PX,
                 fill=color)
 
-    # Draw pick paths and direction chevrons
-    for path_component in pick_path['pickPathInformation']['orderedPickPath']:
+    # Draw pick paths
+    for path_component in ordered_pick_path:
         cell_by_cell_path_to_target_book_location = path_component['cellByCellPathToTargetBookLocation']
 
         for i, current_cell in enumerate(cell_by_cell_path_to_target_book_location):
@@ -109,29 +103,49 @@ def render():
                 fill=Colors.PATH_CELL,
             )
 
-            # Compute direction of the chevron arrow
-            direction = None
-            if i < len(cell_by_cell_path_to_target_book_location) - 1:
-                direction = get_chevron_direction_between_locations(
-                    location_a=current_cell,
-                    location_b=cell_by_cell_path_to_target_book_location[i + 1])
+    # Draw chevrons and path direction lines
+    for path_component in ordered_pick_path:
+        cell_by_cell_path_to_target_book_location = path_component['cellByCellPathToTargetBookLocation']
 
-            # Draw direction arrow if we aren't at the end of a path
-            if direction:
-                triangle_points = get_chevron_coordinates(
-                    # 0.5 value centers the triangle origin
-                    origin_coordinate=(
-                        (current_cell_c + 0.5) * SQUARE_SIDE_LENGTH_PX,  # x
-                        (current_cell_r + 0.5) * SQUARE_SIDE_LENGTH_PX,  # y
-                    ),
-                    direction=direction)
+        for i, current_cell in enumerate(cell_by_cell_path_to_target_book_location):
+            current_cell_r, current_cell_c = current_cell
 
-                canvas.create_polygon(
-                    *triangle_points,
-                    fill=Colors.CHEVRON)
+            # If there is a next cell (we're not at the end) render the arrow and path line
+            if i >= len(cell_by_cell_path_to_target_book_location) - 1:
+                continue
+
+            next_cell = cell_by_cell_path_to_target_book_location[i + 1]
+            next_cell_r, next_cell_c = next_cell
+            direction = get_chevron_angle_transform_for_points(
+                location_a=(
+                (current_cell_c + 0.5) * SQUARE_SIDE_LENGTH_PX, (current_cell_r + 0.5) * SQUARE_SIDE_LENGTH_PX),
+                location_b=((next_cell_c + 0.5) * SQUARE_SIDE_LENGTH_PX, (next_cell_r + 0.5) * SQUARE_SIDE_LENGTH_PX))
+
+            triangle_points = get_transformed_chevron(
+                # 0.5 value centers the triangle origin
+                origin=(
+                    (current_cell_c + 0.5) * SQUARE_SIDE_LENGTH_PX,  # x
+                    (current_cell_r + 0.5) * SQUARE_SIDE_LENGTH_PX,  # y
+                ),
+                transform_angle=direction)
+
+            canvas.create_polygon(
+                *triangle_points,
+                fill=Colors.CHEVRON)
+
+            # Draw line between these two points
+            canvas.create_line(
+                (current_cell_c + 0.5) * SQUARE_SIDE_LENGTH_PX,  # x
+                (current_cell_r + 0.5) * SQUARE_SIDE_LENGTH_PX,  # y
+                (next_cell_c + 0.5) * SQUARE_SIDE_LENGTH_PX,
+                (next_cell_r + 0.5) * SQUARE_SIDE_LENGTH_PX,
+                fill=Colors.PATH_LINE,
+                activedash=True,
+                dash=True,
+            )
 
     # Draw target books
-    for path_component in pick_path['pickPathInformation']['orderedPickPath']:
+    for path_component in ordered_pick_path:
         target_book_and_location = path_component['targetBookAndTargetBookLocation']
         target_location = target_book_and_location['location']
 
@@ -162,74 +176,72 @@ def render():
     logger.info('Finished render.')
 
 
-def get_chevron_direction_between_locations(location_a, location_b):
-    """ Gets the direction of the chevron (arrow) between the two locations. """
-
-    location_a_r, location_a_c = location_a
-    location_b_r, location_b_c = location_b
-
-    if location_a_r > location_b_r and location_a_c == location_b_c:
-        return Direction.UP
-    elif location_a_r < location_b_r and location_a_c == location_b_c:
-        return Direction.DOWN
-    elif location_a_r == location_b_r and location_a_c > location_b_c:
-        return Direction.LEFT
-    elif location_a_r == location_b_r and location_a_c < location_b_c:
-        return Direction.RIGHT
-    else:  # points are equal
-        raise ValueError('Locations provided are equivalent.')
+def get_chevron_angle_transform_for_points(location_a, location_b):
+    """ Gets the angle transformation from vertical of the chevron (arrow) between the two locations. """
+    return angle(location_a, location_b) + (np.pi / float(2))
 
 
-def get_chevron_coordinates(origin_coordinate, direction):
+def angle(a, b):
+    a_x, a_y = a
+    b_x, b_y = b
+
+    d_y = b_y - a_y
+    d_x = b_x - a_x
+
+    return angle_trunc(np.arctan2(d_y, d_x))
+
+
+def angle_trunc(angle):
+    while angle < 0.0:
+        angle += np.pi * 2
+    return angle
+
+
+def get_transformed_chevron(origin, transform_angle):
     """ Creates points for a triangle in the given direction centered at the given origin. """
 
-    a_x, a_y = origin_coordinate
-    b_x, b_y = origin_coordinate
-    c_x, c_y = origin_coordinate
+    o_x, o_y = origin
 
     # This is how many pixels each point will be offset in the x or y direction
     chevron_offset_px = SQUARE_SIDE_LENGTH_PX / 4
 
-    if direction is Direction.UP:
-        a_x -= chevron_offset_px
-        a_y += chevron_offset_px
+    # Compute the upwards direction arrow
+    a_x, a_y = o_x - chevron_offset_px, o_y + chevron_offset_px
+    b_x, b_y = o_x + chevron_offset_px, o_y + chevron_offset_px
+    c_x, c_y = o_x, o_y - chevron_offset_px
 
-        b_x += chevron_offset_px
-        b_y += chevron_offset_px
+    # Pack up the angles
+    a, b, c = (a_x, a_y), (b_x, b_y), (c_x, c_y)
 
-        c_y -= chevron_offset_px
+    # Apply angle transformation
+    a = transform(origin, a, transform_angle)
+    b = transform(origin, b, transform_angle)
+    c = transform(origin, c, transform_angle)
 
-    elif direction is Direction.DOWN:
-        a_x += chevron_offset_px
-        a_y -= chevron_offset_px
+    return a, b, c
 
-        b_x -= chevron_offset_px
-        b_y -= chevron_offset_px
 
-        c_y += chevron_offset_px
+def transform(origin, point, theta):
+    """ Transforms the given point by theta radians around the given origin. """
 
-    elif direction is Direction.RIGHT:
-        a_x -= chevron_offset_px
-        a_y -= chevron_offset_px
+    # Numpy!
+    origin = np.array(origin)
+    point = np.array(point)
 
-        b_x -= chevron_offset_px
-        b_y += chevron_offset_px
+    # Bring point to origin
+    point = point - origin
 
-        c_x += chevron_offset_px
+    # Apply transformation
+    transformation_matrix = np.array([
+        [np.cos(theta), -1 * np.sin(theta)],
+        [np.sin(theta), np.cos(theta)]
+    ])
+    point = np.matmul(transformation_matrix, point)
 
-    elif direction is Direction.LEFT:
-        a_x += chevron_offset_px
-        a_y += chevron_offset_px
+    # Take point back out from origin
+    point = point + origin
 
-        b_x += chevron_offset_px
-        b_y -= chevron_offset_px
-
-        c_x -= chevron_offset_px
-
-    else:
-        raise ValueError('Unknown direction provided: %s' % direction)
-
-    return (a_x, a_y), (b_x, b_y), (c_x, c_y)
+    return tuple(point)
 
 
 def tk_handle_left_key(event):

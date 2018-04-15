@@ -278,6 +278,7 @@ if __name__ == '__main__':
         width=canvas_width,
         height=canvas_height)
     canvas.pack()
+    canvas.master.title("Sparse AR - Pick Path Visualization")
 
     # Setup pick paths, showing the first one
 

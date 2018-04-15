@@ -36,3 +36,7 @@ Navigate to other pick paths using the left and right arrow keys.
 ## Output description
 
 The format of the `output.json` file should be very simple and intuitive. Please, ask one a team member for more details.
+
+## Example visualization
+
+![Example](./example.png)

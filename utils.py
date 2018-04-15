@@ -1,4 +1,5 @@
 import json
+import os
 import logging
 import networkx as nx
 import itertools
@@ -16,6 +17,10 @@ def configure_logger(logger, logging_level=logging.DEBUG):
     handler.setLevel(logging_level)
     logger.addHandler(handler)
     return logger
+
+
+logger = logging.getLogger(os.path.basename(__file__))
+logger = configure_logger(logger)
 
 
 def get_warehouse(warehouse_file_path):
@@ -170,32 +175,55 @@ def get_pick_path_in_library(gt_library_warehouse, optimal_pick_path_locations, 
 
 
 def shortcut_paths(gt_library_warehouse, cell_by_cell_book_to_book_path):
+    logger.debug('\t\tShortcutting path: %s' % cell_by_cell_book_to_book_path)
+
     shortcut_path = []
 
-    cell_by_cell_navigable_path = cell_by_cell_book_to_book_path[2:-1]
+    cell_by_cell_navigable_path = cell_by_cell_book_to_book_path[1:-1]
 
     i = 0
-
     while i < len(cell_by_cell_navigable_path):
 
         j = i
-        found_last_clear_shot_location = False
-        while not found_last_clear_shot_location and j < len(cell_by_cell_navigable_path):
+        farthest_clear_shot_index = i
 
-            start = cell_by_cell_navigable_path[i]
-            end = cell_by_cell_navigable_path[j]
+        while j < len(cell_by_cell_navigable_path):
 
-            if not gt_library_warehouse.is_clear_shot(start, end):
-                found_last_clear_shot_location = True
-            else:
-                j += 1
+            current_cell = cell_by_cell_navigable_path[i]
+            proposed_shortcut_cell = cell_by_cell_navigable_path[j]
 
-        shortcut_path.append(cell_by_cell_navigable_path[j - 1])
+            if gt_library_warehouse.is_clear_shot(current_cell, proposed_shortcut_cell):
+                farthest_clear_shot_index = j
 
-        # Set i to j so we can skip over all the un-necessary locations
-        i = j
+            j += 1
 
-    return cell_by_cell_book_to_book_path[:2] + shortcut_path + cell_by_cell_book_to_book_path[-1:]
+        shortcut_path.append(cell_by_cell_navigable_path[farthest_clear_shot_index])
+
+        i = farthest_clear_shot_index + 1
+
+        # j = i + 1
+        # last_clear_shot_index = j
+        # while j < len(cell_by_cell_navigable_path):
+        #
+        #     start = cell_by_cell_navigable_path[i]
+        #     end = cell_by_cell_navigable_path[j]
+        #
+        #     if not gt_library_warehouse.is_clear_shot(start, end):
+        #         last_clear_shot_index = j
+        #
+        #     j += 1
+        #
+        # if j == len(cell_by_cell_book_to_book_path):
+        #     last_clear_shot_index = len(cell_by_cell_book_to_book_path) - 1
+        #
+        # shortcut_path.append(cell_by_cell_navigable_path[last_clear_shot_index])
+        #
+        # # Set i to j so we can skip over all the un-necessary locations
+        # i = last_clear_shot_index + 1
+        #
+        # logger.debug('\t\t\tSet i to %d' % i)
+
+    return cell_by_cell_book_to_book_path[:1] + shortcut_path + cell_by_cell_book_to_book_path[-1:]
 
 
 def reintroduce_duplicate_column_locations(books_and_locations, source, optimal_pick_path):

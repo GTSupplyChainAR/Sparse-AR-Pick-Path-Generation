@@ -131,7 +131,6 @@ class GTLibraryGridWarehouse(object):
 
         for r in range(self.num_rows):
             for c in range(self.num_cols):
-
                 for offset_r, offset_c in cell_border_offsets:
 
                     new_r, new_c = r + offset_r, c + offset_c

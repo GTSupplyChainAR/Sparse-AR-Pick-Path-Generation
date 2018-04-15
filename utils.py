@@ -172,8 +172,6 @@ def get_pick_path_in_library(gt_library_warehouse, optimal_pick_path_locations, 
 def shortcut_paths(gt_library_warehouse, cell_by_cell_book_to_book_path):
     shortcut_path = []
 
-    target_book_cell = cell_by_cell_book_to_book_path[-1]
-
     cell_by_cell_navigable_path = cell_by_cell_book_to_book_path[2:-1]
 
     i = 0

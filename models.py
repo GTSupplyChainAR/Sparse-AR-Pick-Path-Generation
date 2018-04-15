@@ -92,7 +92,7 @@ class GTLibraryGridWarehouse(object):
                 if shelve_tag_at_location == target_book.shelve_tag:
                     return (r, c)
 
-        # raise ValueError("Couldn't find book with tag %s" % target_book.tag)
+        raise ValueError("Couldn't find book with tag %s" % target_book.tag)
 
     def get_books_locations(self, target_books):
         book_locations = []

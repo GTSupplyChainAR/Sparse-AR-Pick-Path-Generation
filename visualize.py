@@ -58,7 +58,11 @@ def render():
     # Draw column lines
     for col_idx in range(gt_library_grid_warehouse.num_cols):
         col_px = col_idx * SQUARE_SIDE_LENGTH_PX
-        canvas.create_line(col_px, 0, col_px, canvas_height - TITLE_TEXT_HEIGHT)
+        canvas.create_line(
+            col_px,
+            0,
+            col_px,
+            canvas_height - TITLE_TEXT_HEIGHT)
 
     # Draw row lines
     for row_idx in range(gt_library_grid_warehouse.num_rows):
@@ -142,6 +146,7 @@ def render():
                 fill=Colors.PATH_LINE,
                 activedash=True,
                 dash=True,
+                width=SQUARE_SIDE_LENGTH_PX / 5
             )
 
     # Draw target books

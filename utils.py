@@ -163,7 +163,41 @@ def get_pick_path_in_library(gt_library_warehouse, optimal_pick_path_locations, 
 
         optimal_pick_path_in_library.append(path)
 
+    for i in range(len(optimal_pick_path_in_library)):
+        optimal_pick_path_in_library[i] = shortcut_paths(gt_library_warehouse, optimal_pick_path_in_library[i])
+
     return optimal_pick_path_in_library
+
+
+def shortcut_paths(gt_library_warehouse, cell_by_cell_book_to_book_path):
+    shortcut_path = []
+
+    target_book_cell = cell_by_cell_book_to_book_path[-1]
+
+    cell_by_cell_navigable_path = cell_by_cell_book_to_book_path[2:-1]
+
+    i = 0
+
+    while i < len(cell_by_cell_navigable_path):
+
+        j = i
+        found_last_clear_shot_location = False
+        while not found_last_clear_shot_location and j < len(cell_by_cell_navigable_path):
+
+            start = cell_by_cell_navigable_path[i]
+            end = cell_by_cell_navigable_path[j]
+
+            if not gt_library_warehouse.is_clear_shot(start, end):
+                found_last_clear_shot_location = True
+            else:
+                j += 1
+
+        shortcut_path.append(cell_by_cell_navigable_path[j - 1])
+
+        # Set i to j so we can skip over all the un-necessary locations
+        i = j
+
+    return cell_by_cell_book_to_book_path[:2] + shortcut_path + cell_by_cell_book_to_book_path[-1:]
 
 
 def reintroduce_duplicate_column_locations(books_and_locations, source, optimal_pick_path):
@@ -197,12 +231,12 @@ def assert_library_pick_path_is_proper(optimal_pick_path_in_library, optimal_pic
         assert pick_path[-1] == expected_path_ending
 
     # Ensure every step is one cell away
-    for pick_path in optimal_pick_path_in_library:
-        for i in range(len(pick_path) - 1):
-            curr_x, curr_y = pick_path[i]
-            next_x, next_y = pick_path[i + 1]
-
-            assert abs(curr_x - next_x) + abs(curr_y - next_y) == 1
+    # for pick_path in optimal_pick_path_in_library:
+    #     for i in range(len(pick_path) - 1):
+    #         curr_x, curr_y = pick_path[i]
+    #         next_x, next_y = pick_path[i + 1]
+    #
+    #         assert abs(curr_x - next_x) + abs(curr_y - next_y) == 1
 
 
 def assert_library_pick_path_has_cost(optimal_library_pick_path, expected_cost, number_of_books):
@@ -213,17 +247,20 @@ def assert_library_pick_path_has_cost(optimal_library_pick_path, expected_cost, 
             curr_x, curr_y = pick_path[i]
             next_x, next_y = pick_path[i + 1]
 
-            actual_cost += abs(curr_x - next_x) + abs(curr_y - next_y)
+            actual_cost += distance((curr_x, curr_y), (next_x, next_y))
 
     # Every book adds two extra steps (move to book cell, move away from book cell)
     actual_cost -= number_of_books * 2
 
-    assert expected_cost == actual_cost
+    assert actual_cost <= expected_cost
 
 
-def get_pick_path_as_dict(unordered_books, unordered_books_locations, ordered_books, ordered_locations_optimal, optimal_pick_path_in_library):
-    unordered_books_and_locations = [{'book': book.as_dict(), 'location': location} for book, location in zip(unordered_books, unordered_books_locations)]
-    ordered_books_and_locations = [{'book': book.as_dict(), 'location': location} for book, location in zip(ordered_books[1:-1], ordered_locations_optimal[1:-1])]
+def get_pick_path_as_dict(unordered_books, unordered_books_locations, ordered_books, ordered_locations_optimal,
+                          optimal_pick_path_in_library):
+    unordered_books_and_locations = [{'book': book.as_dict(), 'location': location} for book, location in
+                                     zip(unordered_books, unordered_books_locations)]
+    ordered_books_and_locations = [{'book': book.as_dict(), 'location': location} for book, location in
+                                   zip(ordered_books[1:-1], ordered_locations_optimal[1:-1])]
 
     ordered_pick_path = []
     for j in range(len(optimal_pick_path_in_library)):
@@ -251,3 +288,31 @@ def get_pick_path_as_dict(unordered_books, unordered_books_locations, ordered_bo
 
 def get_shelve_aisle_from_tag(shelve_tag):
     return shelve_tag[2]
+
+
+def distance(p1, p2):
+    return (((p2[0] - p1[0]) ** 2) + ((p2[1] - p1[1]) ** 2)) ** 0.5
+
+
+def dotProduct(p1, p2):
+    return (p1[0] * p2[0]) + (p1[1] * p2[1])
+
+
+# Return minimum distance between line segment and point
+def minimumDistance(line, point):
+    d2 = distance(line[1], line[0]) ** 2.0
+    if d2 == 0.0:
+        return distance(point, line[0])
+    # Consider the line extending the segment, parameterized as line[0] + t (line[1] - line[0]).
+    # We find projection of point p onto the line.
+    # It falls where t = [(point-line[0]) . (line[1]-line[0])] / |line[1]-line[0]|^2
+    p1 = (point[0] - line[0][0], point[1] - line[0][1])
+    p2 = (line[1][0] - line[0][0], line[1][1] - line[0][1])
+    t = dotProduct(p1, p2) / d2  # numpy.dot(p1, p2) / d2
+    if t < 0.0:
+        return distance(point, line[0])  # Beyond the line[0] end of the segment
+    elif t > 1.0:
+        return distance(point, line[1])  # Beyond the line[1] end of the segment
+    p3 = (line[0][0] + (t * (line[1][0] - line[0][0])),
+          line[0][1] + (t * (line[1][1] - line[0][1])))  # projection falls on the segment
+    return distance(point, p3)

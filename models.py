@@ -1,5 +1,7 @@
 from constants import SHELVE_CELL, OBSTACLE_CELL, NAVIGABLE_CELL
 import copy
+import numpy as np
+from constants import SUBJECT_RADIUS
 
 
 class Book(object):
@@ -105,3 +107,40 @@ class GTLibraryGridWarehouse(object):
 
     def get_shelve_tag(self, row, col):
         return self.locations_to_shelve_tags.get((row, col), None)
+
+    def is_clear_shot(self, location_a, location_b, radius=SUBJECT_RADIUS):
+
+        assert radius > 0.0
+
+        assert self.get_cell(*location_a) in (NAVIGABLE_CELL, SHELVE_CELL)
+        assert self.get_cell(*location_b) in (NAVIGABLE_CELL, SHELVE_CELL)
+
+        if location_a == location_b:
+            return True
+
+        import utils
+
+        path_line = location_a, location_b
+
+        cell_border_offsets = [
+            (0, 0),
+            (0, 1),
+            (1, 1),
+            (1, 0),
+        ]
+
+        for r in range(self.num_rows):
+            for c in range(self.num_cols):
+
+                for offset_r, offset_c in cell_border_offsets:
+
+                    new_r, new_c = r + offset_r, c + offset_c
+
+                    if new_r < 0 or new_r >= self.num_rows or new_c < 0 or new_c >= self.num_cols:
+                        continue
+
+                    if utils.minimumDistance(path_line, (new_r, new_c)) <= radius:
+                        if self.get_cell(new_r, new_c) is not NAVIGABLE_CELL:
+                            return False
+
+        return True

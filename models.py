@@ -2,6 +2,7 @@ from constants import SHELVE_CELL, OBSTACLE_CELL, NAVIGABLE_CELL
 import copy
 import numpy as np
 from constants import SUBJECT_RADIUS
+import itertools
 
 
 class Book(object):
@@ -122,12 +123,7 @@ class GTLibraryGridWarehouse(object):
 
         path_line = location_a, location_b
 
-        cell_border_offsets = [
-            (0, 0),
-            (0, 1),
-            (1, 1),
-            (1, 0),
-        ]
+        cell_border_offsets = list(itertools.product((-1, 0, +1), repeat=2))
 
         for r in range(self.num_rows):
             for c in range(self.num_cols):

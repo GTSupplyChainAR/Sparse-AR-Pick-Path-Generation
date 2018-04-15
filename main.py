@@ -77,9 +77,9 @@ if __name__ == '__main__':
     np.random.seed(1)
 
     pick_paths = get_pick_paths(
-        number_of_training_pick_paths=1,
-        number_of_testing_pick_paths=0,
-        books_per_pick_path=4,
+        number_of_training_pick_paths=20,
+        number_of_testing_pick_paths=20,
+        books_per_pick_path=10,
         source=(0, 0),
     )
 

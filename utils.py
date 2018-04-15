@@ -188,7 +188,7 @@ def get_pick_path_in_library(gt_library_warehouse, optimal_pick_path_locations, 
 
 
 def shortcut_paths(gt_library_warehouse, cell_by_cell_book_to_book_path):
-    logger.debug('Shortcutting path with %d cells' % len(cell_by_cell_book_to_book_path))
+    logger.debug('Shortcutting path with %d cells.' % len(cell_by_cell_book_to_book_path))
 
     shortcut_path = []
 
@@ -214,7 +214,11 @@ def shortcut_paths(gt_library_warehouse, cell_by_cell_book_to_book_path):
 
         i = farthest_clear_shot_index + 1
 
-    return cell_by_cell_book_to_book_path[:2] + shortcut_path + cell_by_cell_book_to_book_path[-1:]
+    shortcut_path = cell_by_cell_book_to_book_path[:2] + shortcut_path + cell_by_cell_book_to_book_path[-1:]
+
+    logger.debug('Path now has %d cells.' % len(shortcut_path))
+
+    return shortcut_path
 
 
 def reintroduce_duplicate_column_locations(books_and_locations, source, optimal_pick_path):

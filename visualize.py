@@ -13,7 +13,7 @@ import numpy as np
 logger = logging.getLogger(os.path.basename(__file__))
 logger = utils.configure_logger(logger)
 
-PICK_PATH_FILE_FORMAT_VERSION = '1.2'
+PICK_PATH_FILE_FORMAT_VERSION = '2.0'
 
 # The length of a side on each square in the Tkinter window
 SQUARE_SIDE_LENGTH_PX = 15

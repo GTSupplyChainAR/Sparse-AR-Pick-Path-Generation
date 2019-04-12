@@ -7,7 +7,7 @@ from constants import NAVIGABLE_CELL, SHELVE_CELL
 from models import GTLibraryGridWarehouse
 import inspect
 
-WAREHOUSE_JSON_FILE_FORMAT_VERSION = '1.1'
+WAREHOUSE_JSON_FILE_FORMAT_VERSION = '2.0'
 
 
 class GlobalTabbingFilter(logging.Filter):

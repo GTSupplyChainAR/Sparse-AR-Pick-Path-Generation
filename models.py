@@ -15,11 +15,11 @@ class Book(object):
 
     @property
     def tag(self):
-        return "D-%s-%s-%s" % (self.aisle, self.column, self.row)
+        return "%s-%s-%s" % (self.aisle, self.column, self.row)
 
     @property
-    def shelve_tag(self):
-        return "D-%s-%s" % (self.aisle, self.column)
+    def column_tag(self):
+        return "%s-%s" % (self.aisle, self.column)
 
     def __str__(self):
         return "%s: %s by %s" % (self.tag, self.title, self.author)
@@ -91,9 +91,9 @@ class GTLibraryGridWarehouse(object):
                 if cell is not SHELVE_CELL:
                     continue
 
-                shelve_tag_at_location = self.get_shelve_tag(r, c)
+                shelve_tag_at_location = self.get_column_tag_from_row_and_col(r, c)
 
-                if shelve_tag_at_location == target_book.shelve_tag:
+                if shelve_tag_at_location == target_book.column_tag:
                     return (r, c)
 
         raise ValueError("Couldn't find book with tag %s" % target_book.tag)
@@ -109,7 +109,7 @@ class GTLibraryGridWarehouse(object):
     def get_cell(self, row, col):
         return self.navigation_grid[row][col]
 
-    def get_shelve_tag(self, row, col):
+    def get_column_tag_from_row_and_col(self, row, col):
         return self.locations_to_columns_tags.get((row, col), None)
 
     def is_clear_shot(self, location_a, location_b, radius=SUBJECT_RADIUS):

@@ -10,7 +10,7 @@ logger = logging.getLogger(os.path.basename(__file__))
 logger = utils.configure_logger(logger)
 
 
-PICK_PATH_FILE_FORMAT_VERSION = '1.2'
+PICK_PATH_FILE_FORMAT_VERSION = '2.0'
 
 
 def generate_pick_path_as_dict(gt_library_warehouse, books_per_pick_path, source):  # type: (GTLibraryGridWarehouse, int, (int, int)) -> dict
@@ -77,10 +77,10 @@ if __name__ == '__main__':
     np.random.seed(1)
 
     pick_paths = get_pick_paths(
-        number_of_training_pick_paths=20,
-        number_of_testing_pick_paths=20,
+        number_of_training_pick_paths=10,
+        number_of_testing_pick_paths=10,
         books_per_pick_path=10,
-        source=(0, 0),
+        source=(24, 0),
     )
 
     with open('pick-paths.json', mode='w+') as f:

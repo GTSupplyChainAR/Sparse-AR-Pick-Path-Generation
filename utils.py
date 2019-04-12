@@ -61,13 +61,17 @@ def convert_grid_to_graph(gt_library_grid, unit_cost=1):
     num_rows = len(gt_library_grid)
     num_cols = len(gt_library_grid[0])
 
+    # Add all navigable cells to the warehouse library grid
     for r in range(num_rows):
         for c in range(num_cols):
+            # Skip navigable cells like book locations or obstacles
             if gt_library_grid[r][c] is not NAVIGABLE_CELL:
                 continue
 
+            # Only add navigable cells
             G.add_node((r, c))
 
+    # For each pair of navigable cells in the
     for n1, n2 in itertools.combinations(G.nodes, 2):
         if are_neighbors_in_grid(n1, n2):
             G.add_edge(n1, n2, weight=unit_cost)
@@ -81,16 +85,16 @@ def get_navigable_cell_coordinate_near_book(book_coordinate, gt_library_warehous
     book_coordinate_r, book_coordinate_c = book_coordinate
 
     # Use the book's shelve aisle to determine where the nearest navigable cell is
-    shelve_tag = gt_library_warehouse.get_shelve_tag(book_coordinate_r, book_coordinate_c)
-    shelve_aisle = get_shelve_aisle_from_tag(shelve_tag)
+    column_tag = gt_library_warehouse.get_column_tag_from_row_and_col(book_coordinate_r, book_coordinate_c)
+    aisle_tag = get_aisle_tag_from_column_tag(column_tag)
 
-    if shelve_aisle in ('A', 'C', 'E', 'G'):
-        # Then, look to the cell above
-        return (book_coordinate_r - 1, book_coordinate_c)
-
-    elif shelve_aisle in ('B', 'D', 'F', 'H'):
-        # Then, book to the cell below
+    if aisle_tag in ('A', 'C', 'E', 'G'):
+        # Then, look to the cell below
         return (book_coordinate_r + 1, book_coordinate_c)
+
+    elif aisle_tag in ('B', 'D', 'F'):
+        # Then, book to the cell above
+        return (book_coordinate_r - 1, book_coordinate_c)
 
 
 def are_neighbors_in_grid(coordinate_a, coordinate_b):
@@ -138,6 +142,41 @@ def get_subgraph_on_book_locations(gt_library_warehouse, book_locations, source_
             cell2_location = location2
         else:
             cell2_location = get_navigable_cell_coordinate_near_book(location2, gt_library_warehouse)
+
+        def map_so(x, a, b, c, d):
+            """ https://stackoverflow.com/questions/345187/math-mapping-numbers """
+            y = (x - a) / (b - a) * (d - c) + c
+            return y
+
+
+        def library_layout(G_library: nx.Graph):
+            MIN_ROW = 0
+            MAX_ROW = 24
+
+            MIN_COL = 0
+            MAX_COL = 11
+
+            position_dict = {}
+            for node in G_library.nodes:
+                r, c = node
+                position_dict[node] = (
+                    map_so(r, MIN_ROW, MAX_ROW, -1, 1),
+                    map_so(c, MIN_COL, MAX_COL, -1, 1)
+                )
+
+            return position_dict
+
+        ### CHECK LAYOUT HERE
+        # import matplotlib.pyplot as plt
+        # fig = plt.figure(figsize=(20, 20))
+        # pos = library_layout(G_library)
+        #
+        #
+        #
+        # nx.draw_networkx_nodes(G_library, pos)
+        # nx.draw_networkx_labels(G_library, pos)
+        # nx.draw_networkx_edges(G_library, pos)
+        # plt.show()
 
         # Use Dijkstra's algorithm to determine the distance between adjacent shelves
         shortest_path_cost = nx.dijkstra_path_length(G_library, cell1_location, cell2_location)
@@ -307,8 +346,8 @@ def get_pick_path_as_dict(unordered_books, unordered_books_locations, ordered_bo
     }
 
 
-def get_shelve_aisle_from_tag(shelve_tag):
-    return shelve_tag[2]
+def get_aisle_tag_from_column_tag(column_tag):
+    return column_tag[0]
 
 
 def distance(p1, p2):

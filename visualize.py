@@ -16,7 +16,7 @@ logger = utils.configure_logger(logger)
 PICK_PATH_FILE_FORMAT_VERSION = '2.0'
 
 # The length of a side on each square in the Tkinter window
-SQUARE_SIDE_LENGTH_PX = 15
+SQUARE_SIDE_LENGTH_PX = 35
 
 # The height of the text portion at the bottom of the Tkinter window
 TITLE_TEXT_HEIGHT = 30

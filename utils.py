@@ -192,7 +192,7 @@ def get_pick_path_in_library(gt_library_warehouse, optimal_pick_path_locations, 
 
     G_library = convert_grid_to_graph(gt_library_warehouse.navigation_grid)
 
-    optimal_pick_path_in_library = []
+    optimal_pick_paths_in_library = []
 
     # Get the cell-by-cell path between every pair of adjacent nodes in the optimal pick path
     for i in range(len(optimal_pick_path_locations) - 1):
@@ -218,12 +218,12 @@ def get_pick_path_in_library(gt_library_warehouse, optimal_pick_path_locations, 
         if n2 != source_coordinate:
             path = path + [n2]
 
-        optimal_pick_path_in_library.append(path)
+        optimal_pick_paths_in_library.append(path)
 
-    for i in range(len(optimal_pick_path_in_library)):
-        optimal_pick_path_in_library[i] = shortcut_paths(gt_library_warehouse, optimal_pick_path_in_library[i])
+    for i in range(len(optimal_pick_paths_in_library)):
+        optimal_pick_paths_in_library[i] = shortcut_paths(gt_library_warehouse, optimal_pick_paths_in_library[i])
 
-    return optimal_pick_path_in_library
+    return optimal_pick_paths_in_library
 
 
 def shortcut_paths(gt_library_warehouse, cell_by_cell_book_to_book_path):
@@ -231,13 +231,15 @@ def shortcut_paths(gt_library_warehouse, cell_by_cell_book_to_book_path):
 
     shortcut_path = []
 
+    # Remove the 0th and last cells from consideration
+    # because we want to keep those no matter what
     cell_by_cell_navigable_path = cell_by_cell_book_to_book_path[1:-1]
 
     i = 0
     while i < len(cell_by_cell_navigable_path):
 
         j = i
-        farthest_clear_shot_index = i
+        farthest_clear_shot_index = j
 
         while j < len(cell_by_cell_navigable_path):
 
@@ -245,7 +247,12 @@ def shortcut_paths(gt_library_warehouse, cell_by_cell_book_to_book_path):
             proposed_shortcut_cell = cell_by_cell_navigable_path[j]
 
             if gt_library_warehouse.is_clear_shot(current_cell, proposed_shortcut_cell):
+                # Keep looking forward
                 farthest_clear_shot_index = j
+            # else:
+            #     # The clear shot has ended, so set the variable one back and shortcut the path
+            #     farthest_clear_shot_index -= 1
+            #     break
 
             j += 1
 

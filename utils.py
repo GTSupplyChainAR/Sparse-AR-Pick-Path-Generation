@@ -49,7 +49,7 @@ def get_warehouse(warehouse_file_path):
     return GTLibraryGridWarehouse(
         dimensions=(layout['numRows'], layout['numCols']),
         navigation_grid=layout['navigationGrid'],
-        shelve_tags_to_locations=layout['shelveTagsToLocations'],
+        column_tags_to_navigation_grid_coordinates=layout['columnTagsToNavigationGridCoordinates'],
         book_dicts=warehouse_data['books'],
     )
 

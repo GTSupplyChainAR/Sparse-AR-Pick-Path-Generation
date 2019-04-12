@@ -39,16 +39,19 @@ class Book(object):
 
 
 class GTLibraryGridWarehouse(object):
-    NUMBER_OF_SHELVES = 6 * 8
+    # THe number of columns in the grid. Each column houses 5 shelves. Each shelve houses one book.
+    # 7 = Number of aisles
+    # 3 = Number of columns per aisle
+    TOTAL_NUMBER_OF_COLUMNS = 7 * 3
 
-    def __init__(self, dimensions, navigation_grid, shelve_tags_to_locations, book_dicts):
+    def __init__(self, dimensions, navigation_grid, column_tags_to_navigation_grid_coordinates, book_dicts):
 
         self.dimensions = dimensions
         num_rows, num_cols = dimensions
 
         self.navigation_grid = copy.deepcopy(navigation_grid)
-        assert len(navigation_grid) == num_rows
-        assert len(navigation_grid[0]) == num_cols
+        assert len(navigation_grid) == num_rows, f'{len(navigation_grid)} != {num_rows}'
+        assert len(navigation_grid[0]) == num_cols, f'{len(navigation_grid[0])} != {num_cols}'
 
         for row in navigation_grid:
             for cell in row:
@@ -56,8 +59,8 @@ class GTLibraryGridWarehouse(object):
                        or cell == OBSTACLE_CELL \
                        or cell == SHELVE_CELL
 
-        assert len(shelve_tags_to_locations) == self.NUMBER_OF_SHELVES
-        self.locations_to_shelve_tags = {tuple(location): tag for tag, location in shelve_tags_to_locations.iteritems()}
+        assert len(column_tags_to_navigation_grid_coordinates) == self.TOTAL_NUMBER_OF_COLUMNS
+        self.locations_to_columns_tags = {tuple(location): tag for tag, location in column_tags_to_navigation_grid_coordinates.items()}
 
         self.books = []
         for book_dict in book_dicts:
@@ -107,7 +110,7 @@ class GTLibraryGridWarehouse(object):
         return self.navigation_grid[row][col]
 
     def get_shelve_tag(self, row, col):
-        return self.locations_to_shelve_tags.get((row, col), None)
+        return self.locations_to_columns_tags.get((row, col), None)
 
     def is_clear_shot(self, location_a, location_b, radius=SUBJECT_RADIUS):
 

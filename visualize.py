@@ -1,4 +1,8 @@
-import Tkinter as tk
+try:
+    import Tkinter as tk
+except ImportError:
+    import tkinter as tk
+
 from constants import SHELVE_CELL, NAVIGABLE_CELL, OBSTACLE_CELL
 import utils
 import json
@@ -49,8 +53,8 @@ def render():
     global gt_library_grid_warehouse, canvas_height, canvas_width, canvas, pick_paths, current_pick_path_index
 
     # Get pick path to be rendered
-    pick_path = pick_paths[current_pick_path_index]
-    ordered_pick_path = pick_path['pickPathInformation']['orderedPickPath']
+    # pick_path = pick_paths[current_pick_path_index]
+    # ordered_pick_path = pick_path['pickPathInformation']['orderedPickPath']
 
     # Remove all elements added in previous calls to render
     canvas.delete('all')
@@ -91,89 +95,89 @@ def render():
                 (r + 1) * SQUARE_SIDE_LENGTH_PX,
                 fill=color)
 
-    # Draw pick paths
-    for path_component in ordered_pick_path:
-        cell_by_cell_path_to_target_book_location = path_component['cellByCellPathToTargetBookLocation']
-
-        for i, current_cell in enumerate(cell_by_cell_path_to_target_book_location):
-            current_cell_r, current_cell_c = current_cell
-
-            # Draw cell in the path
-            canvas.create_rectangle(
-                current_cell_c * SQUARE_SIDE_LENGTH_PX,
-                current_cell_r * SQUARE_SIDE_LENGTH_PX,
-                (current_cell_c + 1) * SQUARE_SIDE_LENGTH_PX,
-                (current_cell_r + 1) * SQUARE_SIDE_LENGTH_PX,
-                fill=Colors.PATH_CELL,
-            )
-
-    # Draw chevrons and path direction lines
-    for path_component in ordered_pick_path:
-        cell_by_cell_path_to_target_book_location = path_component['cellByCellPathToTargetBookLocation']
-
-        for i, current_cell in enumerate(cell_by_cell_path_to_target_book_location):
-            current_cell_r, current_cell_c = current_cell
-
-            # If there is a next cell (we're not at the end) render the arrow and path line
-            if i >= len(cell_by_cell_path_to_target_book_location) - 1:
-                continue
-
-            next_cell = cell_by_cell_path_to_target_book_location[i + 1]
-            next_cell_r, next_cell_c = next_cell
-            direction = get_chevron_angle_transform_for_points(
-                location_a=(
-                (current_cell_c + 0.5) * SQUARE_SIDE_LENGTH_PX, (current_cell_r + 0.5) * SQUARE_SIDE_LENGTH_PX),
-                location_b=((next_cell_c + 0.5) * SQUARE_SIDE_LENGTH_PX, (next_cell_r + 0.5) * SQUARE_SIDE_LENGTH_PX))
-
-            triangle_points = get_transformed_chevron(
-                # 0.5 value centers the triangle origin
-                origin=(
-                    (current_cell_c + 0.5) * SQUARE_SIDE_LENGTH_PX,  # x
-                    (current_cell_r + 0.5) * SQUARE_SIDE_LENGTH_PX,  # y
-                ),
-                transform_angle=direction)
-
-            canvas.create_polygon(
-                *triangle_points,
-                fill=Colors.CHEVRON)
-
-            # Draw line between these two points
-            canvas.create_line(
-                (current_cell_c + 0.5) * SQUARE_SIDE_LENGTH_PX,  # x
-                (current_cell_r + 0.5) * SQUARE_SIDE_LENGTH_PX,  # y
-                (next_cell_c + 0.5) * SQUARE_SIDE_LENGTH_PX,
-                (next_cell_r + 0.5) * SQUARE_SIDE_LENGTH_PX,
-                fill=Colors.PATH_LINE,
-                activedash=True,
-                dash=True,
-                width=SQUARE_SIDE_LENGTH_PX / 5
-            )
-
-    # Draw target books
-    for path_component in ordered_pick_path:
-        target_book_and_location = path_component['targetBookAndTargetBookLocation']
-        target_location = target_book_and_location['location']
-
-        if not target_location:
-            continue
-
-        target_location_r, target_location_c = target_book_and_location['location']
-
-        canvas.create_rectangle(
-            target_location_c * SQUARE_SIDE_LENGTH_PX,
-            target_location_r * SQUARE_SIDE_LENGTH_PX,
-            (target_location_c + 1) * SQUARE_SIDE_LENGTH_PX,
-            (target_location_r + 1) * SQUARE_SIDE_LENGTH_PX,
-            fill=Colors.TARGET_BOOK_CELL)
-
-    # Draw pick path ID
-    canvas.create_text(
-        10,  # x offset
-        canvas_height - TITLE_TEXT_HEIGHT / 2,
-        anchor=tk.W,
-        fill=Colors.TITLE_FONT,
-        font='Calibri 12 bold',
-        text='Path ID %02d - %s' % (pick_path['pathId'], pick_path['pathType'].title()))
+    # # Draw pick paths
+    # for path_component in ordered_pick_path:
+    #     cell_by_cell_path_to_target_book_location = path_component['cellByCellPathToTargetBookLocation']
+    #
+    #     for i, current_cell in enumerate(cell_by_cell_path_to_target_book_location):
+    #         current_cell_r, current_cell_c = current_cell
+    #
+    #         # Draw cell in the path
+    #         canvas.create_rectangle(
+    #             current_cell_c * SQUARE_SIDE_LENGTH_PX,
+    #             current_cell_r * SQUARE_SIDE_LENGTH_PX,
+    #             (current_cell_c + 1) * SQUARE_SIDE_LENGTH_PX,
+    #             (current_cell_r + 1) * SQUARE_SIDE_LENGTH_PX,
+    #             fill=Colors.PATH_CELL,
+    #         )
+    #
+    # # Draw chevrons and path direction lines
+    # for path_component in ordered_pick_path:
+    #     cell_by_cell_path_to_target_book_location = path_component['cellByCellPathToTargetBookLocation']
+    #
+    #     for i, current_cell in enumerate(cell_by_cell_path_to_target_book_location):
+    #         current_cell_r, current_cell_c = current_cell
+    #
+    #         # If there is a next cell (we're not at the end) render the arrow and path line
+    #         if i >= len(cell_by_cell_path_to_target_book_location) - 1:
+    #             continue
+    #
+    #         next_cell = cell_by_cell_path_to_target_book_location[i + 1]
+    #         next_cell_r, next_cell_c = next_cell
+    #         direction = get_chevron_angle_transform_for_points(
+    #             location_a=(
+    #             (current_cell_c + 0.5) * SQUARE_SIDE_LENGTH_PX, (current_cell_r + 0.5) * SQUARE_SIDE_LENGTH_PX),
+    #             location_b=((next_cell_c + 0.5) * SQUARE_SIDE_LENGTH_PX, (next_cell_r + 0.5) * SQUARE_SIDE_LENGTH_PX))
+    #
+    #         triangle_points = get_transformed_chevron(
+    #             # 0.5 value centers the triangle origin
+    #             origin=(
+    #                 (current_cell_c + 0.5) * SQUARE_SIDE_LENGTH_PX,  # x
+    #                 (current_cell_r + 0.5) * SQUARE_SIDE_LENGTH_PX,  # y
+    #             ),
+    #             transform_angle=direction)
+    #
+    #         canvas.create_polygon(
+    #             *triangle_points,
+    #             fill=Colors.CHEVRON)
+    #
+    #         # Draw line between these two points
+    #         canvas.create_line(
+    #             (current_cell_c + 0.5) * SQUARE_SIDE_LENGTH_PX,  # x
+    #             (current_cell_r + 0.5) * SQUARE_SIDE_LENGTH_PX,  # y
+    #             (next_cell_c + 0.5) * SQUARE_SIDE_LENGTH_PX,
+    #             (next_cell_r + 0.5) * SQUARE_SIDE_LENGTH_PX,
+    #             fill=Colors.PATH_LINE,
+    #             activedash=True,
+    #             dash=True,
+    #             width=SQUARE_SIDE_LENGTH_PX / 5
+    #         )
+    #
+    # # Draw target books
+    # for path_component in ordered_pick_path:
+    #     target_book_and_location = path_component['targetBookAndTargetBookLocation']
+    #     target_location = target_book_and_location['location']
+    #
+    #     if not target_location:
+    #         continue
+    #
+    #     target_location_r, target_location_c = target_book_and_location['location']
+    #
+    #     canvas.create_rectangle(
+    #         target_location_c * SQUARE_SIDE_LENGTH_PX,
+    #         target_location_r * SQUARE_SIDE_LENGTH_PX,
+    #         (target_location_c + 1) * SQUARE_SIDE_LENGTH_PX,
+    #         (target_location_r + 1) * SQUARE_SIDE_LENGTH_PX,
+    #         fill=Colors.TARGET_BOOK_CELL)
+    #
+    # # Draw pick path ID
+    # canvas.create_text(
+    #     10,  # x offset
+    #     canvas_height - TITLE_TEXT_HEIGHT / 2,
+    #     anchor=tk.W,
+    #     fill=Colors.TITLE_FONT,
+    #     font='Calibri 12 bold',
+    #     text='Path ID %02d - %s' % (pick_path['pathId'], pick_path['pathType'].title()))
 
     # Apply changes to canvas
     canvas.update()
@@ -287,18 +291,18 @@ if __name__ == '__main__':
 
     # Setup pick paths, showing the first one
 
-    with open('pick-paths.json', mode='r') as f:
-        pick_path_data = json.load(f)
-
-    assert pick_path_data['version'] == PICK_PATH_FILE_FORMAT_VERSION
-
-    global pick_paths, current_pick_path_index
-    pick_paths = pick_path_data['pickPaths']
-    current_pick_path_index = 0
-
-    # Bind Left/Right keypress events to the corresponding functions
-    tk_main.bind('<Left>', tk_handle_left_key)
-    tk_main.bind('<Right>', tk_handle_right_key)
+    # with open('pick-paths.json', mode='r') as f:
+    #     pick_path_data = json.load(f)
+    #
+    # assert pick_path_data['version'] == PICK_PATH_FILE_FORMAT_VERSION
+    #
+    # global pick_paths, current_pick_path_index
+    # pick_paths = pick_path_data['pickPaths']
+    # current_pick_path_index = 0
+    #
+    # # Bind Left/Right keypress events to the corresponding functions
+    # tk_main.bind('<Left>', tk_handle_left_key)
+    # tk_main.bind('<Right>', tk_handle_right_key)
 
     # Render the first pick path
     render()

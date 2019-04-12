@@ -1,8 +1,8 @@
 {
   "version": "1.1",
   "warehouseLayout": {
-    "numRows": 12,
-    "numCols": 25,
+    "numRows": 25,
+    "numCols": 12,
     "verticalShelves": 3,
     "navigationGrid": [
       [2,1,1,2,1,1,2,1,0,0,0,0],
@@ -38,7 +38,7 @@
       [0,0,0,0,0,0,0,0,0,0,0,0],
       [0,0,0,0,0,0,0,0,0,0,0,0]
     ],
-    "columnTagsToNavigationGridCoordinate": {
+    "columnTagsToNavigationGridCoordinates": {
       "A-1": [18, 0],
       "A-2": [18, 3],
       "A-3": [18, 6],
